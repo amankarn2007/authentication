@@ -5,14 +5,28 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc -b",
+    "start": "node ./dist/server.js",
+    "dev": "pnpm build && pnpm start"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "^7.5.0",
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
+    "@types/morgan": "^1.9.10",
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.3.1",
     "express": "^5.2.1",
-    "typescript": "^5.9.3"
+    "morgan": "^1.10.1",
+    "pg": "^8.20.0",
+    "prisma": "^7.5.0",
+    "typescript": "^5.9.3",
+    "zod": "^4.3.6"
   }
 }
