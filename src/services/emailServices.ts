@@ -19,7 +19,7 @@ if(!process.env.GOOGLE_REFRESH_TOKEN) {
   throw new Error("GOOGLE_REFRESH_TOKEN is not defined in enviroment variables");
 }
 
-const transporter = nodemailer.createTransport({
+const transporter = nodemailer.createTransport({ //gmail connection
   service: 'gmail',
   auth: {
     type: 'OAuth2',
@@ -45,7 +45,7 @@ interface Email {
   text: string,
   html: string
 }
-export default async function sendEmail ({to, subject, text, html}: Email) {
+export default async function sendEmail ({to, subject, text, html}: Email) { //email sender
   try {
     const info = await transporter.sendMail({
       from: `"Aman Developer" <${process.env.EMAIL_USER}>`, // sender address

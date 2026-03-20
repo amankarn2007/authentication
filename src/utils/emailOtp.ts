@@ -3,7 +3,7 @@ export function generatedOtp() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-export function getOtpHtml(otp: string) {
+export function getOtpHtml(otp: string) { //email boilerplate
     return (
         `<!DOCTYPE html>
         <html>
