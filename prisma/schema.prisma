@@ -40,4 +40,5 @@ model Session {
   ip                    String
   userAgent             String
   revoked               Boolean     @default(false)
+  createdAt             DateTime    @default(now())
 }

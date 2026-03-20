@@ -4,7 +4,6 @@ import prismaClient from "../db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto"
-import { email } from "zod";
 
 
 // normal register func, validate schema, hash password and save in db
@@ -168,6 +167,21 @@ export async function getMe(req: Request, res: Response) {
     const decode = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
     //console.log(decode)
 
+
+    //check session, bcs user can access it also after logout
+    const session = await prismaClient.session.findFirst({
+        where: {
+            id: decode.sessionId,
+            revoked: false, //if session is valid, revoked: false
+        }
+    })
+
+    if(!session) { //session revoked should be false
+        return res.status(400).json({
+            message: "Session expired or revoked"
+        })
+    }
+
     //we saved user.id in jwt token on login time
     const user = await prismaClient.user.findFirst({
         where: {
@@ -297,8 +311,32 @@ export async function logout(req: Request, res: Response) {
     })
 }
 
-export async function logoutAll() {
-    
+
+export async function logoutAll(req: Request, res: Response) {
+    const refreshToken = req.cookies.refreshToken;
+
+    if(!refreshToken) {
+        return res.json({
+            message: "Token is missing",
+        })
+    }
+
+    const decoded = await jwt.verify(refreshToken, process.env.JWT_SECRET!) as JwtPayload;
+
+    await prismaClient.session.updateMany({ //all sessions of this user, revoked: true
+        where: {
+            userId: decoded.id
+        },
+        data: {
+            revoked: true
+        }
+    })
+
+    res.clearCookie("refreshToken");
+
+    res.status(200).json({
+        message: "Logged out from all devices successfully"
+    })
 }
 
 export async function verifyEmail() {
