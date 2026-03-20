@@ -4,7 +4,8 @@ import prismaClient from "../db.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto"
-
+import sendEmail from "../services/emailServices.js";
+import { generatedOtp, getOtpHtml } from "../utils/emailOtp.js";
 
 // normal register func, validate schema, hash password and save in db
 export async function register(req: Request, res: Response) {
@@ -40,10 +41,30 @@ export async function register(req: Request, res: Response) {
             data: {
                 username,
                 email,
-                password: hash,
-                verified: false
+                password: hash
             }
         })
+
+        /* Otp verification part */
+        const otp = generatedOtp();
+        const html = getOtpHtml(otp);
+        const otpHash = crypto.createHash("sha256").update(otp).digest("hex");
+
+        await prismaClient.otp.create({
+            data: {
+                email,
+                userId: user.id,
+                otpHash
+            }
+        })
+
+        await sendEmail({
+            to: email,
+            subject: "OTP Verification",
+            text: `Your OTP is: ${otp}`,
+            html
+        })
+        /* Otp verification part */
 
         res.status(201).json({
             message: "User created successfully",
@@ -193,7 +214,8 @@ export async function getMe(req: Request, res: Response) {
         message: "User fetched successfully",
         user: {
             username: user?.username,
-            email: user?.email
+            email: user?.email,
+            verified: user?.verified
         }
     })
 }
@@ -339,6 +361,47 @@ export async function logoutAll(req: Request, res: Response) {
     })
 }
 
-export async function verifyEmail() {
 
+/* take otp and email from body */
+export async function verifyEmail(req: Request, res: Response) {
+    const { otp, email } = req.body;
+
+    const otpHash = crypto.createHash("sha256").update(otp).digest("hex");
+
+    const otpDoc = await prismaClient.otp.findFirst({
+        where: {
+            email,
+            otpHash
+        }
+    })
+
+    if(!otpDoc) {
+        return res.status(400).json({
+            message: "Invalid otp"
+        })
+    }
+
+    const user = await prismaClient.user.update({ //update account status
+        where: {
+            email
+        },
+        data: {
+            verified: true
+        }
+    })
+
+    await prismaClient.otp.deleteMany({ //delete all prev otps of this account
+        where: {
+            userId: otpDoc.userId
+        }
+    })
+
+    res.status(200).json({
+        message: "Account verified successfully",
+        user: {
+            username: user.username,
+            email: user.email,
+            verified: user.verified
+        }
+    })
 }
